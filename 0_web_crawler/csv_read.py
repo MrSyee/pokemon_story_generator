@@ -1,4 +1,6 @@
 import pandas as pd
 
-pk_data = pd.read_csv('pk_data_g1.csv')
+DATA_PATH = "./data/"
+
+pk_data = pd.read_csv(DATA_PATH + 'pk_data_g1.csv')
 print(pk_data)
