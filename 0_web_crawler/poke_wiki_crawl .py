@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 
+
 def get_html(url):
     html = ""
     resp = requests.get(url)
