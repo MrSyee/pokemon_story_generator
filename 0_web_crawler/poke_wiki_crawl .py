@@ -131,6 +131,6 @@ if not os.path.isdir(DATA_PATH):
     os.mkdir(DATA_PATH)
 
 # pk_data.to_csv(DATA_PATH + "pk_data_g1.csv")
-pk_data.to_csv(DATA_PATH + "pk_data_g4.csv", index=False, quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+pk_data.to_csv(DATA_PATH + "pk_data_g1.csv", index=False, quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
 
