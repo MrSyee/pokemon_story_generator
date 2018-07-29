@@ -2,6 +2,7 @@ import os
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
+import csv
 
 
 def get_html(url):
@@ -19,6 +20,8 @@ def get_desc(rounded_all):
 
     if rounded == []:
         rounded = rounded_all[4]('td', class_="rounded")
+        if rounded == []:
+            rounded = rounded_all[6]('td', class_="rounded")
 
     desc = ""
     prev_d = ""
@@ -37,8 +40,12 @@ def get_desc(rounded_all):
 def get_type(rounded_all):
     rounded = rounded_all[0]('span', class_="split-cell text-white")
     pk_type = ''
+    pk_type_sub = []
     for span in rounded:
-        pk_type += span.get_text().strip()
+        pk_type_sub.append(span.get_text().strip())
+#         pk_type += span.get_text().strip()
+
+    pk_type = ','.join(pk_type_sub)
 
     return pk_type
 
@@ -46,13 +53,16 @@ def get_type(rounded_all):
 def get_egggroup(rounded_all):
     rounded = rounded_all[0]('td')
     egg_group = ''
+    egg_group_sub = []
     for td in rounded:
         flag = False
         for a in td('a'):
             if flag:
-                egg_group += a.get_text().strip()
+                egg_group_sub.append(a.get_text().strip())
+#                 egg_group += a.get_text().strip()
             if a.get_text().strip() == "알그룹":
                 flag = True
+    egg_group = ','.join(egg_group_sub)
     return egg_group
 
 # 1. url 불러오기
@@ -69,10 +79,12 @@ pk_names = []
 prev_name = ""
 for i in range(len(table)):
     pk_name = table[i]('td')[3].a.get('title')
+#     pk_name = table[i]('td')[3].a['title']
     if prev_name == pk_name:
         continue
     prev_name = pk_name
     link = table[i]('td')[3].a.get('href')
+#     link = table[i]('td')[3].a['href']
     link = "http://ko.pokemon.wikia.com" + link
     pk_name = pk_name.split(' ')[0]
     pk_names.append(pk_name)
@@ -118,6 +130,7 @@ pk_data['egg_group'] = egg_groups
 if not os.path.isdir(DATA_PATH):
     os.mkdir(DATA_PATH)
 
-pk_data.to_csv(DATA_PATH + "pk_data_g1.csv")
+# pk_data.to_csv(DATA_PATH + "pk_data_g1.csv")
+pk_data.to_csv(DATA_PATH + "pk_data_g4.csv", index=False, quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
 
