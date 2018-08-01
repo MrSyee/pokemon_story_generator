@@ -11,7 +11,7 @@ from matplotlib import font_manager, rc
 # os마다 폰트 파일의 위치를 찾아 코드를 고쳐야함.
 # window : c:/Windows/Fonts/malgun.ttf
 # ubuntu : /usr/share/fonts/truetype/nanum/NanumMyeongjo.ttf
-font_name = font_manager.FontProperties(fname="/usr/share/fonts/truetype/nanum/NanumMyeongjo.ttf").get_name()
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
 rc('font', family=font_name)
 
 twitter = Twitter()
@@ -24,6 +24,10 @@ def normalize(array):
 
 def create_word_vector(word, pos_embeddings):
     pos_list = twitter.pos(word, norm=True)
+    for i, pos in enumerate(pos_list):
+    pos = str(pos).replace(" ", "")
+    if pos not in list(pos_vectors.vocab.keys()): # lookup table에 없는 word는 UNK로 변경
+        pos_list[i] = ('UNK', 'Alpha')
     word_vector = np.sum([pos_embeddings.word_vec(str(pos).replace(" ", "")) for pos in pos_list], axis=0)
     return normalize(word_vector)
 
