@@ -25,10 +25,10 @@ def normalize(array):
 def create_word_vector(word, pos_embeddings):
     pos_list = twitter.pos(word, norm=True)
     for i, pos in enumerate(pos_list):
-    pos = str(pos).replace(" ", "")
-    if pos not in list(pos_vectors.vocab.keys()): # lookup table에 없는 word는 UNK로 변경
-        pos_list[i] = ('UNK', 'Alpha')
-    word_vector = np.sum([pos_embeddings.word_vec(str(pos).replace(" ", "")) for pos in pos_list], axis=0)
+        pos = str(pos).replace(" ", "")
+        if pos not in list(pos_vectors.vocab.keys()): # lookup table에 없는 word는 UNK로 변경
+            pos_list[i] = ('UNK', 'Alpha')
+        word_vector = np.sum([pos_embeddings.word_vec(str(pos).replace(" ", "")) for pos in pos_list], axis=0)
     return normalize(word_vector)
 
 
