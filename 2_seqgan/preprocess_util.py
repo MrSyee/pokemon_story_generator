@@ -28,7 +28,7 @@ def sentence2pos(train_text, tag):
             sentence = analyzer.pos(sentence)
             sentences.append(sentence)
 
-    pos_counter = [[('UNK', ''), -1]]  # 빈도수 문제로 word_dict에 없는 word를 처리하기 위함. unknown
+    pos_counter = [['UNK', -1]]  # 빈도수 문제로 word_dict에 없는 word를 처리하기 위함. unknown
     pos_counter.extend(collections.Counter([word[0] for words in sentences for word in words]).most_common())
     print(pos_counter)
 
