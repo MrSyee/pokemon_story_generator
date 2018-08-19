@@ -102,14 +102,11 @@ def data_to_index(dataset, pos2idx):
         f.write('\n')
     f.close()
 
-
 if __name__ == "__main__":
     seq_length = 20  # max 52
     analyzer = Kkma()
 
-    # get dataset before preprocessing
-    print("Get dataset before preprocessing...")
-    _get_before_dataset()
+    # _get_before_dataset()
 
     # load before dataset
     a = open("./data/pk_before_input_data.pkl", 'rb')
