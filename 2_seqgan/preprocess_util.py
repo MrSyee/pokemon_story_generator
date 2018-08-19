@@ -6,7 +6,10 @@ import pickle
 import collections
 import random
 import numpy as np
+import os
 
+if not os.path.isdir('./data'):
+    os.mkdir('./data')
 
 def _save_pickle(path, data):
     # save pkl
@@ -223,7 +226,7 @@ if __name__ == "__main__":
 
     # make embedding vector and etc
     print("Data preprocessing in progress..")
-    embed_path = "./data/embed/vec.txt"
+    embed_path = "./embed/vec.txt"
     pos_size, embedding_size = get_preprocess_data(embed_path, pos_list)
     print("pos_size: ", pos_size)
     print("embedding_size: ", embedding_size)

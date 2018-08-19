@@ -5,3 +5,9 @@
 */vec
 */graphs
 */*.txt
+*/save/
+*/embed/
+2_seqgan/sequence_gan_test.py
+*/checkpoint/
+
+*/__pycache__/

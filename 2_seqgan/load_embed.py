@@ -61,8 +61,8 @@ def load_vec_file(filepath):
 
 
 if __name__ == "__main__":
-    embed_path = "./data/embed/ko.tsv"
-    load_path = "./data/embed/vec.txt"
+    embed_path = "./embed/ko.tsv"
+    load_path = "./embed/vec.txt"
 
     print("Loading {}...".format(embed_path))
     load_pratrained_vector(embed_path, load_path)
