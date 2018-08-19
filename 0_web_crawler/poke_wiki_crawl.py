@@ -71,6 +71,41 @@ def get_egggroup(rounded_all):
     egg_group = ','.join(egg_group_sub)
     return egg_group
 
+
+def get_life(soup):
+    
+    for tag in soup.find_all('h2'):
+        if tag.get_text().strip() == '생태':
+            life_h2_tag = tag
+            
+    pk_life = ''
+    pk_life_sub = []
+    try:
+        for element in life_h2_tag.next_elements:
+            if element.name == 'h2':
+                break
+
+            if element.name == 'p':
+                pk_life_sub.append(element.get_text().strip())
+            elif element.name == 'li':
+                    pk_life_sub.append(element.get_text().strip())
+    except:
+        pass
+    
+    pk_life = ' '.join(pk_life_sub)
+    
+#     if pk_life == "":
+#         if '생태' in soup.find_all('meta',property="og:description")[0].attrs['content']:
+#             pk_life = soup.find_all('meta',property="og:description")[0].attrs['content'].split('생태')[1]
+#         else:
+#             pk_life = soup.find_all('meta',property="og:description")[0].attrs['content']
+                
+    if pk_life == "":
+        print("Life Null : [{}] {}".format(i, pk_names[i]))
+
+    return pk_life
+
+
 # 1. url 불러오기
 url_idx =1 # 전국도감 1세대 ~ 7세대까지
 url_number = 0 # file 저장용
@@ -108,6 +143,7 @@ while url_idx < 8:
     pk_desc = []
     pk_types = []
     egg_groups = []
+    pk_life = []
     print("Crawling Proceeding..")
     for page in pages:
         print("[{}] {}".format(i, pk_names[i]))
@@ -128,6 +164,10 @@ while url_idx < 8:
         # 알 그룹
         egg_group = get_egggroup(rounded_all)
         egg_groups.append(egg_group)
+        
+        # 생태
+        life = get_life(soup)
+        pk_life.append(life)
 
         i += 1
 
@@ -139,6 +179,7 @@ while url_idx < 8:
     pk_data['desc'] = pk_desc
     pk_data['type'] = pk_types
     pk_data['egg_group'] = egg_groups
+    pk_data['life'] = pk_life
 
     if not os.path.isdir(DATA_PATH):
         os.mkdir(DATA_PATH)
