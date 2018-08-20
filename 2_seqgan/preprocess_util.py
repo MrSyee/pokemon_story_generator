@@ -133,13 +133,15 @@ def get_preprocess_data(embedpath, data_pos_list):
     print("after embed: ", np.shape(embedding_vec))
 
     # 현재 데이터에는 있지만 embedding vector에 없는 데이터는 무작위 vector로 embedding vector에 추가
+    start_embed = np.random.randn(1, embedding_size)
     add_embed = np.random.randn(len(nonexist_pos), embedding_size)
-    embedding_vec = np.concatenate([embedding_vec, add_embed], axis=0)
+    embedding_vec = np.concatenate([start_embed, embedding_vec, add_embed], axis=0)
     print(len(nonexist_pos))
     print("after embed2: ", np.shape(embedding_vec))
 
     # 현재 데이터와 새로 만들어진 embedding vector에 맞는 pos2idx, idx2pos 만듬
     pos2idx = dict()
+    pos2idx["<start>"] = len(pos2idx)
     for idx in sorted(exist_idx):
         pos = idx2pos[idx]
         pos2idx[pos] = len(pos2idx)
@@ -212,8 +214,9 @@ if __name__ == "__main__":
                 input.append(sent)
 
     # sentence와 pos_list pkl 만듬
+    # 이미 pkl 만들었으면 주석 처리, 처음 사용시 주석 해제
     print("Data Loading and indexing...")
-    get_sentence_pos(input)
+    # get_sentence_pos(input)
 
     # load sentences separated by pos (pkl)
     a = open('./data/pk_real_data.pkl', 'rb')

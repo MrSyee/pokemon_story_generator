@@ -6,10 +6,13 @@ from generator import Generator
 from discriminator import Discriminator
 from rollout import ROLLOUT
 import pickle
+import time
+from time import strftime
 
 #########################################################################################
 #  Generator  Hyper-parameters
 ######################################################################################
+# seq_length = 20
 EMB_DIM = 200 # embedding dimension
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
 SEQ_LENGTH = 20 # sequence length
@@ -32,12 +35,12 @@ dis_batch_size = 64
 #  Basic Training Parameters
 #########################################################################################
 TOTAL_BATCH = 60
-positive_file = './data/pk_data_index.txt'
-negative_file = 'save/generator_sample.txt'
-eval_file = 'save/eval_file.txt'
 generated_num = 100
 sample_num = 10
 
+positive_file = './data/pk_data_index.txt'
+negative_file = 'save/negative_sample.txt'
+eval_file = 'save/eval_file.txt'
 
 a = open('./data/pk_data_index.pkl', 'rb')
 real_data = pickle.load(a)
@@ -101,6 +104,9 @@ def make_sample(eval_file, int_to_vocab, sample_num):
 
 ################################## main() #########################################
 
+# 시간측정
+start_time = time.time()
+
 tf.reset_default_graph()
 
 random.seed(SEED)
@@ -125,7 +131,7 @@ sess.run(tf.global_variables_initializer())
 # First, use the oracle model to provide the positive examples, which are sampled from the oracle data distribution
 #  pre-train generator
 gen_data_loader.create_batches(positive_file)
-gen_sample = open('save/gen_sample.txt', 'w')
+gen_sample = open('save/pretrain_sample.txt', 'w')
 print('Start pre-training...')
 gen_sample.write('pre-training...\n')
 for epoch in range(PRE_EPOCH_NUM):
@@ -211,13 +217,17 @@ for total_batch in range(TOTAL_BATCH):
 
 gen_sample.close()
 
+# 걸린 시간 출력
+time_check = time.time() - start_time
+print("--- {} seconds ---".format(time_check))
+
 generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
 
 samples = make_sample(eval_file, int_to_vocab, generated_num)
 samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]
 samples = [' '.join(sample) for sample in samples]
 
-f = open('./save/eval_file_vocab.txt', 'w')
+f = open('./save/final_output_vocab.txt', 'w')
 for token in samples:
     token = token + '\n'
     f.write(token)
