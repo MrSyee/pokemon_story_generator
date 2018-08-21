@@ -45,15 +45,23 @@ def get_desc(rounded_all):
 
 def get_type(rounded_all):
     rounded = rounded_all[0]('span', class_="split-cell text-white")
-    pk_type = ''
-    pk_type_sub = []
+    pk_type_sub1 = ''
+    pk_type_sub2 = ''
+
     for span in rounded:
-        pk_type_sub.append(span.get_text().strip())
-#         pk_type += span.get_text().strip()
+        if pk_type_sub1 == '':
+            pk_type_sub1 = span.get_text().strip()
 
-    pk_type = ','.join(pk_type_sub)
+        else:
+            if span.get_text().strip() != '':
+                pk_type_sub2 = span.get_text().strip()
+            else:
+                pk_type_sub2 = None
 
-    return pk_type
+#     pk_type = ','.join(pk_type_sub)
+
+    return pk_type_sub1, pk_type_sub2
+
 
 
 def get_egggroup(rounded_all):
@@ -70,6 +78,7 @@ def get_egggroup(rounded_all):
                 flag = True
     egg_group = ','.join(egg_group_sub)
     return egg_group
+
 
 
 def get_life(soup):
@@ -141,9 +150,10 @@ while url_idx < 8:
     # 3. url 내의 필요한 부분 크롤링
     i = 0
     pk_desc = []
-    pk_types = []
+    pk_type1 = []
+    pk_type2 = []
     egg_groups = []
-    pk_life = []
+#     pk_life = []
     print("Crawling Proceeding..")
     for page in pages:
         print("[{}] {}".format(i, pk_names[i]))
@@ -152,22 +162,25 @@ while url_idx < 8:
         soup = BeautifulSoup(c, "html5lib")
 
         rounded_all = soup.find_all("div", class_="rounded")
+        
 
         # 도감 설명
         desc = get_desc(rounded_all)
         pk_desc.append(desc)
 
         # 속성
-        pk_type = get_type(rounded_all)
-        pk_types.append(pk_type)
+        pk_type_sub1, pk_type_sub2 = get_type(rounded_all)
+        pk_type1.append(pk_type_sub1)
+        pk_type2.append(pk_type_sub2)
 
         # 알 그룹
         egg_group = get_egggroup(rounded_all)
         egg_groups.append(egg_group)
         
         # 생태
-        life = get_life(soup)
-        pk_life.append(life)
+#         desc = desc + " " +get_life(soup)
+#         pk_life.append(life)
+#         pk_desc.append(desc)
 
         i += 1
 
@@ -177,9 +190,10 @@ while url_idx < 8:
     pk_data = pd.DataFrame()
     pk_data['name'] = pk_names
     pk_data['desc'] = pk_desc
-    pk_data['type'] = pk_types
+    pk_data['type1'] = pk_type1
+    pk_data['type2'] = pk_type2
     pk_data['egg_group'] = egg_groups
-    pk_data['life'] = pk_life
+#     pk_data['life'] = pk_life
 
     if not os.path.isdir(DATA_PATH):
         os.mkdir(DATA_PATH)
