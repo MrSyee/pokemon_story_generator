@@ -191,6 +191,7 @@ def _pkl_loading_test():
 if __name__ == "__main__":
 
     DATA_PATH = "./data/"
+    embed_path = "./embed/vec.txt"
 
     pk_data = []
     pk_desc = []
@@ -229,7 +230,6 @@ if __name__ == "__main__":
 
     # make embedding vector and etc
     print("Data preprocessing in progress..")
-    embed_path = "./embed/vec.txt"
     pos_size, embedding_size = get_preprocess_data(embed_path, pos_list)
     print("pos_size: ", pos_size)
     print("embedding_size: ", embedding_size)

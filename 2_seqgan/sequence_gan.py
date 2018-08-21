@@ -7,17 +7,15 @@ from discriminator import Discriminator
 from rollout import ROLLOUT
 import pickle
 import time
-from time import strftime
 
 #########################################################################################
 #  Generator  Hyper-parameters
 ######################################################################################
-# seq_length = 20
 EMB_DIM = 200 # embedding dimension
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
-SEQ_LENGTH = 20 # sequence length
+SEQ_LENGTH = 30 # sequence length
 START_TOKEN = 0
-PRE_EPOCH_NUM = 60  # supervise (maximum likelihood estimation) epochs
+PRE_EPOCH_NUM = 120  # supervise (maximum likelihood estimation) epochs
 SEED = 88
 BATCH_SIZE = 64
 
@@ -34,9 +32,15 @@ dis_batch_size = 64
 #########################################################################################
 #  Basic Training Parameters
 #########################################################################################
-TOTAL_BATCH = 60
+TOTAL_BATCH = 200
 generated_num = 100
 sample_num = 10
+
+# original seqgan parameter
+# HIDDEN_DIM = 32
+# PRE_EPOCH_NUM = 120
+# TOTAL_BATCH = 200
+# generated_num = 10000
 
 positive_file = './data/pk_data_index.txt'
 negative_file = 'save/negative_sample.txt'
@@ -50,6 +54,7 @@ vocab_to_int = pickle.load(a)
 
 a = open('./data/pk_idx2pos.pkl', 'rb')
 int_to_vocab = pickle.load(a)
+print(int_to_vocab)
 
 a = open('./data/pk_embedding_vec.pkl', 'rb')
 word_embedding_matrix = pickle.load(a)
@@ -61,6 +66,7 @@ word_embedding_matrix = word_embedding_matrix.astype(np.float32)
 real_data_vocab = [[int_to_vocab[i] for i in sample if int_to_vocab[i] != '<PAD>'] for sample in real_data]
 real_data_vocab = [' '.join(sample) for sample in real_data_vocab]
 print(len(real_data_vocab))
+
 
 def generate_samples(sess, trainable_model, batch_size, generated_num, output_file, word_embedding_matrix):
     # Generate Samples
@@ -112,10 +118,10 @@ tf.reset_default_graph()
 random.seed(SEED)
 np.random.seed(SEED)
 
-gen_data_loader = Gen_Data_loader(BATCH_SIZE)
+gen_data_loader = Gen_Data_loader(BATCH_SIZE, SEQ_LENGTH)
 vocab_size = len(vocab_to_int)  # 6447
 print(vocab_size)
-dis_data_loader = Dis_dataloader(BATCH_SIZE)
+dis_data_loader = Dis_dataloader(BATCH_SIZE, SEQ_LENGTH)
 
 generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN)
 discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size, embedding_size=dis_embedding_dim,
@@ -218,8 +224,9 @@ for total_batch in range(TOTAL_BATCH):
 gen_sample.close()
 
 # 걸린 시간 출력
-time_check = time.time() - start_time
-print("--- {} seconds ---".format(time_check))
+time_check = "--- total {} seconds ---".\
+    format(time.time() - start_time)
+print(time_check)
 
 generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
 
@@ -231,4 +238,10 @@ f = open('./save/final_output_vocab.txt', 'w')
 for token in samples:
     token = token + '\n'
     f.write(token)
+f.close()
+
+# write the training time
+f = open('./save/_parameters.txt', 'w')
+f.write("Training time : {}\n".format(time_check))
+f.write("add <start> signal as zero in word2vec lookup table\n")
 f.close()
