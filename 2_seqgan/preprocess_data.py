@@ -103,9 +103,10 @@ def data_to_index(dataset, pos2idx):
     f.close()
 
 if __name__ == "__main__":
-    seq_length = 20  # max 52
+    seq_length = 30  # max 52
     analyzer = Kkma()
 
+    # 이미 pkl 만들었으면 주석 처리, 처음 사용시 주석 해제
     # _get_before_dataset()
 
     # load before dataset
@@ -129,4 +130,3 @@ if __name__ == "__main__":
     data_to_index(dataset, pos2idx)
 
     print("Complete Creating sequence to index !!")
-

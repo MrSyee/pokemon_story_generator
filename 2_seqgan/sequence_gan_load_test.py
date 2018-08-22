@@ -6,7 +6,6 @@ from generator import Generator
 from discriminator import Discriminator
 from rollout import ROLLOUT
 import pickle
-import time
 
 #########################################################################################
 #  Generator  Hyper-parameters
@@ -54,7 +53,6 @@ vocab_to_int = pickle.load(a)
 
 a = open('./data/pk_idx2pos.pkl', 'rb')
 int_to_vocab = pickle.load(a)
-print(int_to_vocab)
 
 a = open('./data/pk_embedding_vec.pkl', 'rb')
 word_embedding_matrix = pickle.load(a)
@@ -110,8 +108,8 @@ def make_sample(eval_file, int_to_vocab, sample_num):
 
 ################################## main() #########################################
 
-# 시간측정
-start_time = time.time()
+# load model path (./chekckpoint)
+load_model_path = './checkpoint/test4/seqGAN_ours'
 
 tf.reset_default_graph()
 
@@ -126,6 +124,7 @@ dis_data_loader = Dis_dataloader(BATCH_SIZE, SEQ_LENGTH)
 generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN)
 discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size, embedding_size=dis_embedding_dim,
                               filter_sizes=dis_filter_sizes, num_filters=dis_num_filters, l2_reg_lambda=dis_l2_reg_lambda)
+rollout = ROLLOUT(generator, 0.8, word_embedding_matrix)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -134,99 +133,12 @@ sess = tf.Session(config=config)
 saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
 
-# First, use the oracle model to provide the positive examples, which are sampled from the oracle data distribution
-#  pre-train generator
-gen_data_loader.create_batches(positive_file)
-gen_sample = open('save/pretrain_sample.txt', 'w')
-print('Start pre-training...')
-gen_sample.write('pre-training...\n')
-for epoch in range(PRE_EPOCH_NUM):
-    loss = pre_train_epoch(sess, generator, gen_data_loader, word_embedding_matrix)
-    if epoch % 5 == 0:
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
-        sample_vocab = make_sample(eval_file, int_to_vocab, sample_num)
-
-        print('pre-train epoch ', epoch)
-
-        buffer = 'epoch:\t' + str(epoch) + '\n'
-        gen_sample.write(buffer)
-        for sample in sample_vocab:
-            print(sample)
-            buffer = sample + '\n'
-            gen_sample.write(buffer)
-
-#  pre-train discriminator
-print('Start pre-training discriminator...')
-# Train 3 epoch on the generated data and do this for 50 times
-for _ in range(25):
-    generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix)
-    dis_data_loader.load_train_data(positive_file, negative_file)
-    for _ in range(3):
-        dis_data_loader.reset_pointer()
-        for it in range(dis_data_loader.num_batch):
-            x_batch, y_batch = dis_data_loader.next_batch()
-            feed = {
-                discriminator.input_x: x_batch,
-                discriminator.input_y: y_batch,
-                discriminator.dropout_keep_prob: dis_dropout_keep_prob
-            }
-            _ = sess.run(discriminator.train_op, feed)
-
-rollout = ROLLOUT(generator, 0.8, word_embedding_matrix)
-
 print('#########################################################################')
-print('Start Adversarial Training...')
-gen_sample.write('adversarial training...\n')
-for total_batch in range(TOTAL_BATCH):
-    # Train the generator for one step
-    for it in range(1):
-        samples = generator.generate(sess, word_embedding_matrix)
-        rewards = rollout.get_reward(sess, samples, 16, discriminator)
-        feed = {generator.x: samples, generator.rewards: rewards, generator.word_embedding_matrix: word_embedding_matrix}
-        _ = sess.run(generator.g_updates, feed_dict=feed)
+print('Restore Trained Seqgan parameters...')
+saver.restore(sess, load_model_path)
+print("Model restored.")
 
-    # Test
-    if total_batch % 5 == 0 or total_batch == TOTAL_BATCH - 1:
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
-        sample_vocab = make_sample(eval_file, int_to_vocab, sample_num)
-
-        print('total_batch: ', total_batch)
-
-        buffer = 'epoch:\t' + str(total_batch) + '\n'
-        gen_sample.write(buffer)
-        for sample in sample_vocab:
-            print(sample)
-            buffer = sample + '\n'
-            gen_sample.write(buffer)
-
-    # Update roll-out parameters
-    rollout.update_params()
-
-    # Train the discriminator
-    for _ in range(5):
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix)
-        dis_data_loader.load_train_data(positive_file, negative_file)
-
-        for _ in range(3):
-            dis_data_loader.reset_pointer()
-            for it in range(dis_data_loader.num_batch):
-                x_batch, y_batch = dis_data_loader.next_batch()
-                feed = {
-                    discriminator.input_x: x_batch,
-                    discriminator.input_y: y_batch,
-                    discriminator.dropout_keep_prob: dis_dropout_keep_prob
-                }
-                _ = sess.run(discriminator.train_op, feed)
-
-    if total_batch % 5 == 0 or total_batch == TOTAL_BATCH - 1:
-        saver.save(sess, './checkpoint/seqGAN_ours')
-
-gen_sample.close()
-
-# 걸린 시간 출력
-time_check = "--- total {} seconds ---".\
-    format(time.time() - start_time)
-print(time_check)
+# Generate samples using Trained Model
 
 generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
 
@@ -234,14 +146,8 @@ samples = make_sample(eval_file, int_to_vocab, generated_num)
 samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]
 samples = [' '.join(sample) for sample in samples]
 
-f = open('./save/final_output_vocab.txt', 'w')
+f = open('./save/eval_seqgan_vocab.txt', 'w')
 for token in samples:
     token = token + '\n'
     f.write(token)
-f.close()
-
-# write the training time
-f = open('./save/_parameters.txt', 'w')
-f.write("Training time : {}\n".format(time_check))
-f.write("add <start> signal as zero in word2vec lookup table\n")
 f.close()
