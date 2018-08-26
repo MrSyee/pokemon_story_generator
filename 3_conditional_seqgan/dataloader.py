@@ -46,25 +46,35 @@ class Dis_dataloader():
         self.batch_size = batch_size
         self.sentences = np.array([])
         self.labels = np.array([])
+        self.types = np.array([])
         self.sen_length = sen_length
 
     def load_train_data(self, positive_file, negative_file):
         # Load data
         positive_examples = []
+        positive_type = []
         negative_examples = []
-        with open(positive_file)as fin:
-            for line in fin:
+        negative_type = []
+        with open(positive_file, 'r') as f:
+            for line in f:
                 line = line.strip()
+                if line[0] == '[':
+                    self.flag = line[1]
+                    continue
                 line = line.split()
                 parse_line = [int(x) for x in line]
                 positive_examples.append(parse_line)
-        with open(negative_file)as fin:
-            for line in fin:
+                positive_type.append(self.flag)
+
+        with open(negative_file, 'r') as f:
+            for line in f:
                 line = line.strip()
                 line = line.split()
                 parse_line = [int(x) for x in line]
-                if len(parse_line) == self.sen_length:
-                    negative_examples.append(parse_line)
+                negative_type.append(parse_line[0])
+                negative_examples.append(parse_line[1:])
+
+        self.types = np.array(positive_type + negative_type)
         self.sentences = np.array(positive_examples + negative_examples)
 
         # Generate labels
@@ -75,6 +85,7 @@ class Dis_dataloader():
         # Shuffle the data
         shuffle_indices = np.random.permutation(np.arange(len(self.labels)))
         self.sentences = self.sentences[shuffle_indices]
+        self.types = self.types[shuffle_indices]
         self.labels = self.labels[shuffle_indices]
 
         # Split batches
@@ -82,13 +93,14 @@ class Dis_dataloader():
         self.sentences = self.sentences[:self.num_batch * self.batch_size]
         self.labels = self.labels[:self.num_batch * self.batch_size]
         self.sentences_batches = np.split(self.sentences, self.num_batch, 0)
+        self.types_batches = np.split(self.types, self.num_batch, 0)
         self.labels_batches = np.split(self.labels, self.num_batch, 0)
 
         self.pointer = 0
 
 
     def next_batch(self):
-        ret = self.sentences_batches[self.pointer], self.labels_batches[self.pointer]
+        ret = self.sentences_batches[self.pointer], self.types_batches[self.pointer], self.labels_batches[self.pointer]
         self.pointer = (self.pointer + 1) % self.num_batch
         return ret
 

@@ -91,6 +91,7 @@ def generate_samples(sess, trainable_model, batch_size, generated_num, output_fi
             buffer2 = ' '.join([str(x) for x in generated_samples[i]]) + '\n'
             fout.write(buffer + ' ' + buffer2)
 
+
 def pre_train_epoch(sess, trainable_model, data_loader, word_embedding_matrix):
     # Pre-train the generator using MLE for one epoch
     supervised_g_losses = []
@@ -140,8 +141,9 @@ print(vocab_size)
 dis_data_loader = Dis_dataloader(BATCH_SIZE, SEQ_LENGTH)
 
 generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN, TYPE_SIZE)
-discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size, embedding_size=dis_embedding_dim,
-                              filter_sizes=dis_filter_sizes, num_filters=dis_num_filters, l2_reg_lambda=dis_l2_reg_lambda)
+discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size,
+                              embedding_size=dis_embedding_dim, filter_sizes=dis_filter_sizes,
+                              num_filters=dis_num_filters, type_size=TYPE_SIZE, l2_reg_lambda=dis_l2_reg_lambda)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -171,24 +173,25 @@ for epoch in range(PRE_EPOCH_NUM):
             print(sample)
             buffer = sample + '\n'
             gen_sample.write(buffer)
-        l
+
 #  pre-train discriminator
 print('Start pre-training discriminator...')
 # Train 3 epoch on the generated data and do this for 50 times
 for _ in range(1): # 25
-    generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix)
+    random_type = np.random.randint(0, TYPE_SIZE, BATCH_SIZE)
+    generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix, random_type)
     dis_data_loader.load_train_data(positive_file, negative_file)
     for _ in range(1): # 3
         dis_data_loader.reset_pointer()
-        for it in range(dis_data_loader.num_batch):
-            x_batch, y_batch = dis_data_loader.next_batch()
+        for it in range(1): # dis_data_loader.num_batch):
+            seq_batch, condition_batch, label_batch = dis_data_loader.next_batch()
             feed = {
-                discriminator.input_x: x_batch,
-                discriminator.input_y: y_batch,
+                discriminator.input_x: seq_batch,
+                discriminator.input_y: label_batch,
                 discriminator.dropout_keep_prob: dis_dropout_keep_prob
             }
             _ = sess.run(discriminator.train_op, feed)
-
+        l
 rollout = ROLLOUT(generator, 0.8, word_embedding_matrix)
 
 print('#########################################################################')
