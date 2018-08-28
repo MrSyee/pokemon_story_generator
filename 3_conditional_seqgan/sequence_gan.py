@@ -15,7 +15,7 @@ EMB_DIM = 200 # embedding dimension
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
 SEQ_LENGTH = 30 # sequence length
 START_TOKEN = 0
-PRE_EPOCH_NUM = 1  # supervise (maximum likelihood estimation) epochs
+PRE_EPOCH_NUM = 60  # supervise (maximum likelihood estimation) epochs
 SEED = 88
 BATCH_SIZE = 4
 TYPE_SIZE = 18  # conditional type size
@@ -33,7 +33,7 @@ dis_batch_size = 64
 #########################################################################################
 #  Basic Training Parameters
 #########################################################################################
-TOTAL_BATCH = 1
+TOTAL_BATCH = 60
 generated_num = 100
 sample_num = 10
 
@@ -97,7 +97,7 @@ def pre_train_epoch(sess, trainable_model, data_loader, word_embedding_matrix):
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    for it in range(1): # (data_loader.num_batch):
+    for it in range(data_loader.num_batch):
         seq, type = data_loader.next_batch()
         _, g_loss = trainable_model.pretrain_step(sess, seq, word_embedding_matrix, type)
         supervised_g_losses.append(g_loss)
@@ -141,7 +141,7 @@ print(vocab_size)
 dis_data_loader = Dis_dataloader(BATCH_SIZE, SEQ_LENGTH)
 
 generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN, TYPE_SIZE)
-discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size,
+discriminator = Discriminator(sequence_length=SEQ_LENGTH, batch_size=BATCH_SIZE, num_classes=2, vocab_size=vocab_size,
                               embedding_size=dis_embedding_dim, filter_sizes=dis_filter_sizes,
                               num_filters=dis_num_filters, type_size=TYPE_SIZE, l2_reg_lambda=dis_l2_reg_lambda)
 
@@ -177,21 +177,22 @@ for epoch in range(PRE_EPOCH_NUM):
 #  pre-train discriminator
 print('Start pre-training discriminator...')
 # Train 3 epoch on the generated data and do this for 50 times
-for _ in range(1): # 25
+for _ in range(25): # 25
     random_type = np.random.randint(0, TYPE_SIZE, BATCH_SIZE)
     generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix, random_type)
     dis_data_loader.load_train_data(positive_file, negative_file)
-    for _ in range(1): # 3
+    for _ in range(3): # 3
         dis_data_loader.reset_pointer()
-        for it in range(1): # dis_data_loader.num_batch):
+        for it in range(dis_data_loader.num_batch):
             seq_batch, condition_batch, label_batch = dis_data_loader.next_batch()
             feed = {
                 discriminator.input_x: seq_batch,
+                discriminator.input_cond: condition_batch,
                 discriminator.input_y: label_batch,
                 discriminator.dropout_keep_prob: dis_dropout_keep_prob
             }
             _ = sess.run(discriminator.train_op, feed)
-        l
+
 rollout = ROLLOUT(generator, 0.8, word_embedding_matrix)
 
 print('#########################################################################')
@@ -200,14 +201,16 @@ gen_sample.write('adversarial training...\n')
 for total_batch in range(TOTAL_BATCH):
     # Train the generator for one step
     for it in range(1):
-        samples = generator.generate(sess, word_embedding_matrix)
-        rewards = rollout.get_reward(sess, samples, 16, discriminator)
-        feed = {generator.x: samples, generator.rewards: rewards, generator.word_embedding_matrix: word_embedding_matrix}
+        random_type = np.random.randint(0, TYPE_SIZE, BATCH_SIZE)
+        samples = generator.generate(sess, word_embedding_matrix, random_type)
+        rewards = rollout.get_reward(sess, samples, 16, discriminator, random_type)
+        feed = {generator.x: samples, generator.rewards: rewards, generator.type_index: random_type,
+                generator.word_embedding_matrix: word_embedding_matrix}
         _ = sess.run(generator.g_updates, feed_dict=feed)
 
     # Test
     if total_batch % 5 == 0 or total_batch == TOTAL_BATCH - 1:
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
+        generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix, random_type)
         sample_vocab = make_sample(eval_file, int_to_vocab, sample_num)
 
         print('total_batch: ', total_batch)
@@ -223,17 +226,19 @@ for total_batch in range(TOTAL_BATCH):
     rollout.update_params()
 
     # Train the discriminator
-    for _ in range(5):
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix)
+    for _ in range(5): # 5
+        random_type = np.random.randint(0, TYPE_SIZE, BATCH_SIZE)
+        generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix, random_type)
         dis_data_loader.load_train_data(positive_file, negative_file)
 
-        for _ in range(3):
+        for _ in range(3): # 3
             dis_data_loader.reset_pointer()
             for it in range(dis_data_loader.num_batch):
-                x_batch, y_batch = dis_data_loader.next_batch()
+                seq_batch, condition_batch, label_batch = dis_data_loader.next_batch()
                 feed = {
-                    discriminator.input_x: x_batch,
-                    discriminator.input_y: y_batch,
+                    discriminator.input_x: seq_batch,
+                    discriminator.input_cond: condition_batch,
+                    discriminator.input_y: label_batch,
                     discriminator.dropout_keep_prob: dis_dropout_keep_prob
                 }
                 _ = sess.run(discriminator.train_op, feed)
@@ -248,7 +253,8 @@ time_check = "--- total {} seconds ---".\
     format(time.time() - start_time)
 print(time_check)
 
-generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
+random_type = np.random.randint(0, TYPE_SIZE, BATCH_SIZE)
+generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix, random_type)
 
 samples = make_sample(eval_file, int_to_vocab, generated_num)
 samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]

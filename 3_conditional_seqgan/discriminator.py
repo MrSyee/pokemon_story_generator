@@ -63,16 +63,17 @@ class Discriminator(object):
     """
 
     def __init__(
-            self, sequence_length, num_classes, vocab_size,
+            self, sequence_length, batch_size, num_classes, vocab_size,
             embedding_size, filter_sizes, num_filters, type_size, l2_reg_lambda=0.0):
         # Placeholders for input, output and dropout
+        self.batch_size = batch_size
         self.type_size = type_size
         self.sequence_length = sequence_length
         self.num_classes = num_classes
 
-        self.input_x = tf.placeholder(tf.int32, [None, self.sequence_length], name="input_x")
-        self.input_y = tf.placeholder(tf.float32, [None, self.num_classes], name="input_y")
-        self.type_index = tf.placeholder(dtype=tf.int32, shape=[1])
+        self.input_x = tf.placeholder(tf.int32, [self.batch_size, self.sequence_length], name="input_x")
+        self.input_cond = tf.placeholder(tf.int32, [self.batch_size], name="input_cond")
+        self.input_y = tf.placeholder(tf.float32, [self.batch_size, self.num_classes], name="input_y")
 
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 
@@ -80,9 +81,7 @@ class Discriminator(object):
         l2_loss = tf.constant(0.0)
 
         # x 에 type vector 추가
-        x_type_index = tf.reshape(tf.concat([self.type_index] * self.sequence_length, axis=0),
-                                  [1, self.sequence_length])
-        self.x_type_onehot = tf.one_hot(x_type_index, self.type_size)
+        self.x_type_onehot = tf.one_hot(self.input_cond, self.type_size)
         
         with tf.variable_scope('discriminator'):
 
@@ -91,17 +90,21 @@ class Discriminator(object):
                 self.W = tf.Variable(word_embedding_matrix, name="W")
                 embedded_chars = tf.nn.embedding_lookup(self.W, self.input_x)
                 self.embedded_chars_expanded = tf.expand_dims(embedded_chars, -1)
+                embed_shape = np.shape(self.embedded_chars_expanded)
+                x_type_onehot_reshape = tf.reshape(self.x_type_onehot, [-1, 1, 1, self.type_size]) * \
+                                        tf.ones([self.batch_size, embed_shape[1], embed_shape[2], self.type_size])
+                self.concat_embed_cond = tf.concat([self.embedded_chars_expanded, x_type_onehot_reshape], 3)
 
             # Create a convolution + maxpool layer for each filter size
             pooled_outputs = []
             for filter_size, num_filter in zip(filter_sizes, num_filters):
                 with tf.name_scope("conv-maxpool-%s" % filter_size):
                     # Convolution Layer
-                    filter_shape = [filter_size, embedding_size, 1, num_filter]
+                    filter_shape = [filter_size, embedding_size, self.type_size+1, num_filter]
                     W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
                     b = tf.Variable(tf.constant(0.1, shape=[num_filter]), name="b")
                     conv = tf.nn.conv2d(
-                        self.embedded_chars_expanded,
+                        self.concat_embed_cond,
                         W,
                         strides=[1, 1, 1, 1],
                         padding="VALID",
@@ -119,15 +122,12 @@ class Discriminator(object):
             
             # Combine all the pooled features
             num_filters_total = sum(num_filters)
-            print("n_filter: ", num_filters_total)
             self.h_pool = tf.concat(pooled_outputs, 3)
             self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
-            print("h_pool_flat: ", np.shape(self.h_pool_flat))
 
             # Add highway
             with tf.name_scope("highway"):
                 self.h_highway = highway(self.h_pool_flat, self.h_pool_flat.get_shape()[1], 1, 0)
-                print("highway: ", np.shape(self.h_highway))
 
             # Add dropout
             with tf.name_scope("dropout"):
