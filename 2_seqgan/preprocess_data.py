@@ -17,11 +17,9 @@ def _save_pickle(path, data):
 def _get_before_dataset():
     DATA_PATH = "./data/"
 
-    pk_data = []
     pk_desc = []
     for i in range(1,8):
         data = pd.read_csv(DATA_PATH + 'pk_data_g{}.csv'.format(i))
-        pk_data.append(data)
         pk_desc.append(data['desc'])
 
     gen = 1
@@ -33,7 +31,7 @@ def _get_before_dataset():
         gen += 1
         story = list()
         for d in desc:
-            sentences = list()
+            sentences = list().strip()
             if type(d) == float:
                 continue
             count += 1
