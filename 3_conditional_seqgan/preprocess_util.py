@@ -141,7 +141,7 @@ def get_preprocess_data(embedpath, data_pos_list):
     # save pkl
     _save_pickle('./data/pk_pos2idx.pkl', pos2idx)
     _save_pickle('./data/pk_idx2pos.pkl', idx2pos)
-    _save_pickle('./data/pk_embedding_vec.pkl', embedding_vec)
+    _save_pickle('./data/pretrain_embedding_vec.pkl', embedding_vec)
     print("Save all data as pkl !!")
 
     return pos_size, embedding_size
@@ -165,7 +165,7 @@ def _pkl_loading_test():
     idx2pos = pickle.load(a)
 
     # load embedding_vec (pkl)
-    a = open('./data/pk_embedding_vec.pkl', 'rb')
+    a = open('./data/pretrain_embedding_vec.pkl', 'rb')
     embedding_vec = pickle.load(a)
 
     # load type2idx (pkl)

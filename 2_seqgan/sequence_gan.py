@@ -11,7 +11,7 @@ import time
 #########################################################################################
 #  Generator  Hyper-parameters
 ######################################################################################
-EMB_DIM = 200 # embedding dimension
+EMB_DIM = 200 # embedding dimension (pretrained: 200, pk: 30)
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
 SEQ_LENGTH = 30 # sequence length
 START_TOKEN = 0
@@ -45,6 +45,8 @@ sample_num = 10
 positive_file = './data/pk_data_index.txt'
 negative_file = 'save/negative_sample.txt'
 eval_file = 'save/eval_file.txt'
+# "pretrain" or "poke"
+embed_flag = "pretrain"
 
 a = open('./data/pk_data_index.pkl', 'rb')
 real_data = pickle.load(a)
@@ -56,7 +58,10 @@ a = open('./data/pk_idx2pos.pkl', 'rb')
 int_to_vocab = pickle.load(a)
 print(int_to_vocab)
 
-a = open('./data/pk_embedding_vec.pkl', 'rb')
+if embed_flag == "pretrain":
+    a = open('./data/pretrain_embedding_vec.pkl', 'rb')
+elif embed_flag == "poke":
+    a = open('./data/pk_embedding_vec.pkl', 'rb')
 word_embedding_matrix = pickle.load(a)
 word_embedding_matrix = word_embedding_matrix.astype(np.float32)
 
@@ -124,8 +129,9 @@ print(vocab_size)
 dis_data_loader = Dis_dataloader(BATCH_SIZE, SEQ_LENGTH)
 
 generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN)
-discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size, embedding_size=dis_embedding_dim,
-                              filter_sizes=dis_filter_sizes, num_filters=dis_num_filters, l2_reg_lambda=dis_l2_reg_lambda)
+discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, word_embedding_matrix=word_embedding_matrix,
+                              embedding_size=dis_embedding_dim, filter_sizes=dis_filter_sizes,
+                              num_filters=dis_num_filters, l2_reg_lambda=dis_l2_reg_lambda)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
