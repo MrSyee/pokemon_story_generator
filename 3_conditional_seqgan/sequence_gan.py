@@ -3,7 +3,7 @@ import tensorflow as tf
 import random
 from dataloader import Gen_Data_loader, Dis_dataloader
 from generator import Generator
-from discriminator import Discriminator
+from discriminator_ import Discriminator
 from rollout import ROLLOUT
 import pickle
 import time
@@ -17,18 +17,17 @@ SEQ_LENGTH = 30 # sequence length
 START_TOKEN = 0
 PRE_EPOCH_NUM = 60  # supervise (maximum likelihood estimation) epochs
 SEED = 88
-BATCH_SIZE = 4
+BATCH_SIZE = 64
 TYPE_SIZE = 18  # conditional type size
 
 #########################################################################################
 #  Discriminator  Hyper-parameters
 #########################################################################################
 dis_embedding_dim = EMB_DIM
-dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30]
 dis_num_filters = [100, 200, 200, 200, 200, 100, 100, 100, 100, 100, 160, 160]
 dis_dropout_keep_prob = 0.75
 dis_l2_reg_lambda = 0.2
-dis_batch_size = 64
 
 #########################################################################################
 #  Basic Training Parameters
@@ -42,6 +41,8 @@ sample_num = 10
 # PRE_EPOCH_NUM = 120
 # TOTAL_BATCH = 200
 # generated_num = 10000
+# dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+# dis_num_filters = [100, 200, 200, 200, 200, 100, 100, 100, 100, 100, 160, 160]
 
 positive_file = './data/pk_type_data_index.txt'
 negative_file = 'save/negative_sample.txt'
@@ -97,7 +98,7 @@ def pre_train_epoch(sess, trainable_model, data_loader, word_embedding_matrix):
     supervised_g_losses = []
     data_loader.reset_pointer()
 
-    for it in range(data_loader.num_batch):
+    for it in range(data_loader.num_batch):  # 빨리 돌리려면 여기를 1로
         seq, type = data_loader.next_batch()
         _, g_loss = trainable_model.pretrain_step(sess, seq, word_embedding_matrix, type)
         supervised_g_losses.append(g_loss)
@@ -177,13 +178,15 @@ for epoch in range(PRE_EPOCH_NUM):
 #  pre-train discriminator
 print('Start pre-training discriminator...')
 # Train 3 epoch on the generated data and do this for 50 times
-for _ in range(25): # 25
+for pdg in range(25): # 25
+    print("dis_pretrain_gen: ", pdg)
     random_type = np.random.randint(0, TYPE_SIZE, BATCH_SIZE)
     generate_samples(sess, generator, BATCH_SIZE, generated_num, negative_file, word_embedding_matrix, random_type)
     dis_data_loader.load_train_data(positive_file, negative_file)
-    for _ in range(3): # 3
+    for pd in range(3): # 3
+        print("dis_pretrain: ", pd)
         dis_data_loader.reset_pointer()
-        for it in range(dis_data_loader.num_batch):
+        for it in range(dis_data_loader.num_batch): # 빨리 돌리려면 여기를 1로
             seq_batch, condition_batch, label_batch = dis_data_loader.next_batch()
             feed = {
                 discriminator.input_x: seq_batch,
