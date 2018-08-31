@@ -71,9 +71,9 @@ def create_sequence(seq_length, stories):
                             seq_data.append(('UNK', ''))
                 data.append(seq_data)
 
-    _save_pickle("./data/pk_preprocessed_data.pkl", data)
+    _save_pickle("./data/2_pk_preprocessed_data.pkl", data)
 
-    f = open('./data/pk_preprocessed_data.txt', 'w')
+    f = open('./data/2_pk_preprocessed_data.txt', 'w')
     for tokens in data:
         for word in tokens:
             word = str(word) + ' '
@@ -89,10 +89,10 @@ def data_to_index(dataset, pos2idx):
             idx_sentence.append(pos2idx[word[0]])
         idx_dataset.append(idx_sentence)
 
-    _save_pickle("./data/pk_data_index.pkl", idx_dataset)
+    _save_pickle("./data/3_pk_data_index.pkl", idx_dataset)
 
     # save pk_data_index.txt
-    f = open('./data/pk_data_index.txt', 'w')
+    f = open('./data/3_pk_data_index.txt', 'w')
     for idx_sent in idx_dataset:
         for word in idx_sent:
             word = str(word) + ' '
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     print("Complete Creating sequence !!")
 
     # load after dataset
-    a = open("./data/pk_preprocessed_data.pkl", 'rb')
+    a = open("./data/2_pk_preprocessed_data.pkl", 'rb')
     dataset = pickle.load(a)
 
     # load pos to index

@@ -42,13 +42,13 @@ sample_num = 10
 # TOTAL_BATCH = 200
 # generated_num = 10000
 
-positive_file = './data/pk_data_index.txt'
+positive_file = './data/3_pk_data_index.txt'
 negative_file = 'save/negative_sample.txt'
 eval_file = 'save/eval_file.txt'
 # "pretrain" or "poke"
 embed_flag = "pretrain"
 
-a = open('./data/pk_data_index.pkl', 'rb')
+a = open('./data/3_pk_data_index.pkl', 'rb')
 real_data = pickle.load(a)
 
 a = open('./data/pk_pos2idx.pkl', 'rb')

@@ -44,13 +44,13 @@ sample_num = 10
 # dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
 # dis_num_filters = [100, 200, 200, 200, 200, 100, 100, 100, 100, 100, 160, 160]
 
-positive_file = './data/pk_type_data_index.txt'
+positive_file = './data/3_pk_type_data_index.txt'
 negative_file = 'save/negative_sample.txt'
 eval_file = 'save/eval_file.txt'
 # "pretrain" or "poke"
 embed_flag = "pretrain"
 
-a = open('./data/pk_type_data_index.pkl', 'rb')
+a = open('./data/3_pk_type_data_index.pkl', 'rb')
 real_data = pickle.load(a)
 
 a = open('./data/pk_pos2idx.pkl', 'rb')

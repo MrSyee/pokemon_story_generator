@@ -49,13 +49,13 @@ sample_num = 10
 # TOTAL_BATCH = 200
 # generated_num = 10000
 
-positive_file = './data/pk_data_index.txt'
+positive_file = './data/3_pk_type_data_index.txt'
 negative_file = 'save/negative_sample.txt'
 eval_file = 'save/eval_file.txt'
 # "pretrain" or "poke"
 embed_flag = "pretrain"
 
-a = open('./data/pk_data_index.pkl', 'rb')
+a = open('./data/3_pk_type_data_index.pkl', 'rb')
 real_data = pickle.load(a)
 
 a = open('./data/pk_pos2idx.pkl', 'rb')
@@ -80,7 +80,8 @@ word_embedding_matrix = word_embedding_matrix.astype(np.float32)
 # a = open('./data/word_dict.pickle', 'rb')
 # word_dict = pickle.load(a)
 
-real_data_vocab = [[int_to_vocab[i] for i in sample if int_to_vocab[i] != '<PAD>'] for sample in real_data]
+real_data_vocab = [[int_to_vocab[i] for i in sample if int_to_vocab[i] != 'UNK']
+                   for type_story in real_data.values() for sample in type_story]
 real_data_vocab = [' '.join(sample) for sample in real_data_vocab]
 print(len(real_data_vocab))
 
