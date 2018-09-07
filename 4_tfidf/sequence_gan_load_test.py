@@ -13,7 +13,7 @@ import pickle
 EMB_DIM = 200 # embedding dimension
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
 SEQ_LENGTH = 30 # sequence length
-START_TOKEN = 0
+START_TOKEN = 0 #pos idx num 
 PRE_EPOCH_NUM = 120  # supervise (maximum likelihood estimation) epochs
 SEED = 88
 BATCH_SIZE = 64
@@ -59,18 +59,11 @@ a = open('./data/pk_pos2idx.pkl', 'rb')
 vocab_to_int = pickle.load(a)
 
 a = open('./data/pk_idx2pos.pkl', 'rb')
-int_to_vocab = pickle.load(a) 
+int_to_vocab = pickle.load(a) #dict
 
 a = open('./data/pretrain_embedding_vec.pkl', 'rb')
 word_embedding_matrix = pickle.load(a)
 word_embedding_matrix = word_embedding_matrix.astype(np.float32)
-
-# a = open('./data/word_dict.pickle', 'rb')
-# word_dict = pickle.load(a)
-
-#real_data_vocab=[]
-#for o in range(len(type_dict)):
-#    real_data_vocab.append([[[int_to_vocab[i] for i in sample if int_to_vocab[i] != 'UNK'] for sample in real_data[o]]])
 
 def generate_samples(sess, trainable_model, batch_size, generated_num, output_file, word_embedding_matrix):
     # Generate Samples
@@ -115,7 +108,7 @@ def make_sample(eval_file, int_to_vocab, sample_num):
 ################################## main() #########################################
 
 # load model path (./chekckpoint)
-load_model_path = './checkpoint/test4/seqGAN_ours'
+load_model_path = './checkpoint/test4/seqGAN_ours' ##path changed
 
 tf.reset_default_graph()
 
@@ -123,11 +116,12 @@ random.seed(SEED)
 np.random.seed(SEED)
 
 gen_data_loader = Gen_Data_loader(BATCH_SIZE, SEQ_LENGTH)
-vocab_size = len(vocab_to_int)  # 6447
+vocab_size = len(vocab_to_int)  # 6448 (pos)
 print(vocab_size)
 dis_data_loader = Dis_dataloader(BATCH_SIZE, SEQ_LENGTH)
 
 generator = Generator(vocab_size, BATCH_SIZE, EMB_DIM, HIDDEN_DIM, SEQ_LENGTH, START_TOKEN)
+
 discriminator = Discriminator(sequence_length=SEQ_LENGTH, num_classes=2, vocab_size=vocab_size, embedding_size=dis_embedding_dim,
                               filter_sizes=dis_filter_sizes, num_filters=dis_num_filters, l2_reg_lambda=dis_l2_reg_lambda)
 rollout = ROLLOUT(generator, 0.8, word_embedding_matrix)
@@ -144,45 +138,36 @@ print('Restore Trained Seqgan parameters...')
 saver.restore(sess, load_model_path)
 print("Model restored.")
 
-# Generate samples using Trained Model
-
-generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix)
-
-samples = make_sample(eval_file, int_to_vocab, generated_num)
-samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]
-samples = [' '.join(sample) for sample in samples]
-
-f = open('./save/eval_seqgan_vocab.txt', 'w')
-for token in samples:
-    token = token + '\n'
-    f.write(token)
-f.close()
-
 ######################################## TF-IDF #############################################
 from tfidf_extract import TFIDF
 import os
 
-tfidf= TFIDF()
 for idx in range(len(type_dict)):
+    tfidf= TFIDF()
     keyword= tfidf.keyword(idx) # list of string (keyword value in korean word)
     print("type: ", list(type_dict.keys())[list(type_dict.values()).index(idx)], ", keywords: ",keyword, ", length: ", len(keyword))
     RESULT_PATH = "./save/keyword/"
     RESULT_PATH += list(type_dict.keys())[list(type_dict.values()).index(idx)]+ "/"
     if not os.path.exists(RESULT_PATH):
         os.makedirs(RESULT_PATH)
-
+    
     for i in range(len(keyword)):
         path= keyword[i]+ '.txt'
         target= vocab_to_int.get(keyword[i]) #target start token index
-        generator.change_start_token(target)
-        generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix) #generate new sentences with new start token
+        print(list(type_dict.keys())[list(type_dict.values()).index(idx)], keyword[i], target)
+        if (target==None):
+            continue
+        else:
+            generator.change_start_token(target)
+        
+            generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix) #generate new sentences with new start token
 
-        samples = make_sample(eval_file, int_to_vocab, generated_num)
-        samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]
-        samples = [' '.join(sample) for sample in samples]
+            samples = make_sample(eval_file, int_to_vocab, generated_num)
+            samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]
+            samples = [' '.join(sample) for sample in samples]
 
-        f = open(RESULT_PATH + path, 'w') #store the result with new start token
-        for token in samples:
-            token = token + '\n'
-            f.write(token)
-        f.close()
+            f = open(RESULT_PATH + path, 'w') #store the result with new start token
+            for token in samples:
+                token = token + '\n'
+                f.write(token)
+            f.close()
