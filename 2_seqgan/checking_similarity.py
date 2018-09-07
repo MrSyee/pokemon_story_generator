@@ -8,8 +8,8 @@
 
 import numpy as np
 
-# f1 = open('./save/test4/eval_file.txt', 'r')  # f2 < real value
-# f2 = open('./data/pk_data_index.txt', 'r')  # f1 < SeqGAN output
+f1 = open('./save/eval_file.txt', 'r')  # f1 < SeqGAN output
+f2 = open('./data/3_pk_data_index.txt', 'r')  # f2 < real value
 
 lines1 = f1.readlines()
 lines2 = f2.readlines()
@@ -20,7 +20,7 @@ lines2 = f2.readlines()
 
 def Jaccard_sim(lines1, lines2):
 
-    UNK_num = '4949' # 6693(previous) 4949(current)
+    UNK_num = '4979' # 6693(previous) 4979(current)
 
     # Jaccard similarity between two lines
     def Jaccard_sim_lines(line1, line2):

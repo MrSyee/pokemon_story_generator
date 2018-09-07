@@ -8,6 +8,8 @@ import random
 import numpy as np
 import os
 
+np.random.seed(100)
+
 if not os.path.isdir('./data'):
     os.mkdir('./data')
 
@@ -65,11 +67,11 @@ def get_sentence_pos(input):
     print("pos_list: ", pos_list)
 
     # save pkl
-    _save_pickle('./data/pk_real_data.pkl', data)
+    _save_pickle('./data/1_pk_real_data.pkl', data)
     _save_pickle('./data/pk_pos_list.pkl', pos_list)
 
     # save txt
-    f = open('./data/pk_real_data.txt', 'w')
+    f = open('./data/1_pk_real_data.txt', 'w')
     for token in data:
         for word in token:
             word = str(word) + ' '
@@ -154,7 +156,7 @@ def get_preprocess_data(embedpath, data_pos_list):
     # save pkl
     _save_pickle('./data/pk_pos2idx.pkl', pos2idx)
     _save_pickle('./data/pk_idx2pos.pkl', idx2pos)
-    _save_pickle('./data/pk_embedding_vec.pkl', embedding_vec)
+    _save_pickle('./data/pretrain_embedding_vec.pkl', embedding_vec)
     print("Save all data as pkl !!")
 
     return pos_size, embedding_size
@@ -178,7 +180,7 @@ def _pkl_loading_test():
     idx2pos = pickle.load(a)
 
     # load embedding_vec (pkl)
-    a = open('./data/pk_embedding_vec.pkl', 'rb')
+    a = open('./data/pretrain_embedding_vec.pkl', 'rb')
     embedding_vec = pickle.load(a)
 
     print(sents)
@@ -220,7 +222,7 @@ if __name__ == "__main__":
     # get_sentence_pos(input)
 
     # load sentences separated by pos (pkl)
-    a = open('./data/pk_real_data.pkl', 'rb')
+    a = open('./data/1_pk_real_data.pkl', 'rb')
     sents = pickle.load(a)
 
     # load pos_list (pkl)

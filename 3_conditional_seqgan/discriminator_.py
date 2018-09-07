@@ -9,7 +9,7 @@ import pickle
 # An alternative to tf.nn.rnn_cell._linear function, which has been removed in Tensorfow 1.0.1
 # The highway layer is borrowed from https://github.com/mkroutikov/tf-lstm-char-cnn
 def linear(input_, output_size, scope=None):
-    '''
+    """
     Linear map: output[k] = sum_i(Matrix[k, i] * input_[i] ) + Bias[k]
     Args:
     input_: a tensor or a list of 2D, batch x n, Tensors.
@@ -20,7 +20,7 @@ def linear(input_, output_size, scope=None):
     sum_i(input_[i] * W[i]), where W[i]s are newly created matrices.
   Raises:
     ValueError: if some of the arguments has unspecified or wrong shape.
-  '''
+  """
 
     shape = input_.get_shape().as_list()
     if len(shape) != 2:
@@ -35,6 +35,7 @@ def linear(input_, output_size, scope=None):
         bias_term = tf.get_variable("Bias", [output_size], dtype=input_.dtype)
 
     return tf.matmul(input_, tf.transpose(matrix)) + bias_term
+
 
 def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'):
     """Highway Network (cf. http://arxiv.org/abs/1505.00387).
@@ -54,6 +55,7 @@ def highway(input_, size, num_layers=1, bias=-2.0, f=tf.nn.relu, scope='Highway'
 
     return output
 
+
 class Discriminator(object):
     """
     A CNN for text classification.
@@ -61,23 +63,39 @@ class Discriminator(object):
     """
 
     def __init__(
-            self, sequence_length, num_classes, word_embedding_matrix,
-            embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0):
+            self, sequence_length, batch_size, num_classes, word_embedding_matrix,
+            embedding_size, filter_sizes, num_filters, type_size, l2_reg_lambda=0.0):
         # Placeholders for input, output and dropout
-        self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
-        self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
+        self.batch_size = batch_size
+        self.type_size = type_size
+        self.sequence_length = sequence_length
+        self.num_classes = num_classes
+        self.cond_layer_size = 100
+
+        self.input_x = tf.placeholder(tf.int32, [self.batch_size, self.sequence_length], name="input_x")
+        self.input_cond = tf.placeholder(tf.int32, [self.batch_size], name="input_cond")
+        self.input_y = tf.placeholder(tf.float32, [self.batch_size, self.num_classes], name="input_y")
+
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 
         # Keeping track of l2 regularization loss (optional)
         l2_loss = tf.constant(0.0)
+
+        # x 에 type vector 추가
+        self.x_type_onehot = tf.one_hot(self.input_cond, self.type_size)
         
         with tf.variable_scope('discriminator'):
 
             # Embedding layer
             with tf.device('/cpu:0'), tf.name_scope("embedding"):
                 self.W = tf.Variable(word_embedding_matrix, name="W")
-                self.embedded_chars = tf.nn.embedding_lookup(self.W, self.input_x)
-                self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
+                embedded_chars = tf.nn.embedding_lookup(self.W, self.input_x)
+                self.embedded_chars_expanded = tf.expand_dims(embedded_chars, -1)
+                embed_shape = np.shape(self.embedded_chars_expanded)
+                print("dis_embed_shape: ", embed_shape)
+                # x_type_onehot_reshape = tf.reshape(self.x_type_onehot, [-1, 1, 1, self.type_size]) * \
+                #                         tf.ones([self.batch_size, embed_shape[1], embed_shape[2], self.type_size])
+                # self.concat_embed_cond = tf.concat([self.embedded_chars_expanded, x_type_onehot_reshape], 3)
 
             # Create a convolution + maxpool layer for each filter size
             pooled_outputs = []
@@ -98,7 +116,7 @@ class Discriminator(object):
                     # Maxpooling over the outputs
                     pooled = tf.nn.max_pool(
                         h,
-                        ksize=[1, sequence_length - filter_size + 1, 1, 1],
+                        ksize=[1, self.sequence_length - filter_size + 1, 1, 1],
                         strides=[1, 1, 1, 1],
                         padding='VALID',
                         name="pool")
@@ -108,6 +126,7 @@ class Discriminator(object):
             num_filters_total = sum(num_filters)
             self.h_pool = tf.concat(pooled_outputs, 3)
             self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
+            print("dis_num_filters_total: ", num_filters_total)
 
             # Add highway
             with tf.name_scope("highway"):
@@ -116,11 +135,20 @@ class Discriminator(object):
             # Add dropout
             with tf.name_scope("dropout"):
                 self.h_drop = tf.nn.dropout(self.h_highway, self.dropout_keep_prob)
+            print("after_highway: ", np.shape(self.h_drop))
+
+            with tf.name_scope("condition"):
+                W = tf.Variable(tf.truncated_normal([self.type_size, self.cond_layer_size], stddev=0.1), name="W")
+                b = tf.Variable(tf.constant(0.1, shape=[self.cond_layer_size]), name="b")
+                self.cond_layer = tf.nn.xw_plus_b(self.x_type_onehot, W, b, name="cond_layer")
+                print("cond_layer: ", np.shape(self.cond_layer))
 
             # Final (unnormalized) scores and predictions
+            self.h_drop = tf.concat([self.h_drop, self.cond_layer], axis=1)
+            print("after concat conditon: ", np.shape(self.h_drop))
             with tf.name_scope("output"):
-                W = tf.Variable(tf.truncated_normal([num_filters_total, num_classes], stddev=0.1), name="W")
-                b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
+                W = tf.Variable(tf.truncated_normal([num_filters_total+self.cond_layer_size, self.num_classes], stddev=0.1), name="W")
+                b = tf.Variable(tf.constant(0.1, shape=[self.num_classes]), name="b")
                 l2_loss += tf.nn.l2_loss(W)
                 l2_loss += tf.nn.l2_loss(b)
                 self.scores = tf.nn.xw_plus_b(self.h_drop, W, b, name="scores")

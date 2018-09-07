@@ -74,8 +74,14 @@ class Dis_dataloader():
                 negative_type.append(parse_line[0])
                 negative_examples.append(parse_line[1:])
 
+        # print("positive_len: ", np.shape(positive_examples))
+        # print("positive_len: ", np.shape(positive_type))
+        # print("negative_len: ", np.shape(negative_examples))
+        # print("negative_len: ", np.shape(negative_type))
         self.types = np.array(positive_type + negative_type)
         self.sentences = np.array(positive_examples + negative_examples)
+        # print("setences_len: ", np.shape(self.sentences))
+        # print("types_len: ", np.shape(self.types))
 
         # Generate labels
         positive_labels = [[0, 1] for _ in positive_examples]
@@ -90,8 +96,11 @@ class Dis_dataloader():
 
         # Split batches
         self.num_batch = int(len(self.labels) / self.batch_size)
+
         self.sentences = self.sentences[:self.num_batch * self.batch_size]
+        self.types = self.types[:self.num_batch * self.batch_size]
         self.labels = self.labels[:self.num_batch * self.batch_size]
+
         self.sentences_batches = np.split(self.sentences, self.num_batch, 0)
         self.types_batches = np.split(self.types, self.num_batch, 0)
         self.labels_batches = np.split(self.labels, self.num_batch, 0)
