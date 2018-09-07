@@ -14,7 +14,7 @@ EMB_DIM = 200 # embedding dimension (pretrained: 200, pk: 30)
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
 SEQ_LENGTH = 30 # sequence length
 START_TOKEN = 0
-PRE_EPOCH_NUM = 60  # supervise (maximum likelihood estimation) epochs
+PRE_EPOCH_NUM = 120  # supervise (maximum likelihood estimation) epochs
 SEED = 88
 BATCH_SIZE = 64
 TYPE_SIZE = 18  # conditional type size
@@ -31,8 +31,8 @@ dis_l2_reg_lambda = 0.2
 #########################################################################################
 #  Basic Training Parameters
 #########################################################################################
-TOTAL_BATCH = 60
-generated_num = 100
+TOTAL_BATCH = 200
+generated_num = 1000
 sample_num = 10
 
 # original seqgan parameter

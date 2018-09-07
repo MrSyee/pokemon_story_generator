@@ -10,7 +10,7 @@ import pickle
 #########################################################################################
 #  Generator  Hyper-parameters
 ######################################################################################
-EMB_DIM = 200 # embedding dimension (pretrained: 200, pk: 30)
+EMB_DIM = 30 # embedding dimension (pretrained: 200, pk: 30)
 HIDDEN_DIM = 300 # hidden state dimension of lstm cell
 SEQ_LENGTH = 30 # sequence length
 START_TOKEN = 0
@@ -22,7 +22,7 @@ BATCH_SIZE = 64
 #  Discriminator  Hyper-parameters
 #########################################################################################
 dis_embedding_dim = EMB_DIM
-dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+dis_filter_sizes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 30]
 dis_num_filters = [100, 200, 200, 200, 200, 100, 100, 100, 100, 100, 160, 160]
 dis_dropout_keep_prob = 0.75
 dis_l2_reg_lambda = 0.2
@@ -32,7 +32,7 @@ dis_batch_size = 64
 #  Basic Training Parameters
 #########################################################################################
 TOTAL_BATCH = 200
-generated_num = 100
+generated_num = 1000
 sample_num = 10
 
 # original seqgan parameter
@@ -45,7 +45,7 @@ positive_file = './data/3_pk_data_index.txt'
 negative_file = 'save/negative_sample.txt'
 eval_file = 'save/eval_file.txt'
 # "pretrain" or "poke"
-embed_flag = "pretrain"
+embed_flag = "poke"
 
 a = open('./data/3_pk_data_index.pkl', 'rb')
 real_data = pickle.load(a)
@@ -114,7 +114,7 @@ def make_sample(eval_file, int_to_vocab, sample_num):
 ################################## main() #########################################
 
 # load model path (./chekckpoint)
-load_model_path = './checkpoint/test4/seqGAN_ours'
+load_model_path = './checkpoint/test5_pkembed/seqGAN_ours'
 
 tf.reset_default_graph()
 
