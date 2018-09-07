@@ -53,7 +53,6 @@ idx2type = pickle.load(a)
 
 a= open('./data/pk_type2idx.pkl', 'rb')
 type_dict = pickle.load(a)
-print("type idx: ", len(type_dict)) #속성 18개
 
 a = open('./data/pk_pos2idx.pkl', 'rb')
 vocab_to_int = pickle.load(a)
