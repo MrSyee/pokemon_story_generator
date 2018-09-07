@@ -160,14 +160,29 @@ f.close()
 
 ######################################## TF-IDF #############################################
 from tfidf_extract import TFIDF
+import os
 
+tfidf= TFIDF()
 for idx in range(len(type_dict)):
-    tfidf= TFIDF()
     keyword= tfidf.keyword(idx) # list of string (keyword value in korean word)
     print("type: ", list(type_dict.keys())[list(type_dict.values()).index(idx)], ", keywords: ",keyword, ", length: ", len(keyword))
+    RESULT_PATH = "./save/keyword/"
+    RESULT_PATH += list(type_dict.keys())[list(type_dict.values()).index(idx)]+ "/"
+    if not os.path.exists(RESULT_PATH):
+        os.makedirs(RESULT_PATH)
 
-    keyword_idx=[]
     for i in range(len(keyword)):
-        keyword_idx.append(vocab_to_int.get(keyword[i]))
-    
-    print("vocab to int idx: ", keyword_idx)
+        path= keyword[i]+ '.txt'
+        target= vocab_to_int.get(keyword[i]) #target start token index
+        generator.change_start_token(target)
+        generate_samples(sess, generator, BATCH_SIZE, generated_num, eval_file, word_embedding_matrix) #generate new sentences with new start token
+
+        samples = make_sample(eval_file, int_to_vocab, generated_num)
+        samples = [[word for word in sample.split() if word != 'UNK'] for sample in samples]
+        samples = [' '.join(sample) for sample in samples]
+
+        f = open(RESULT_PATH + path, 'w') #store the result with new start token
+        for token in samples:
+            token = token + '\n'
+            f.write(token)
+        f.close()
