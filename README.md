@@ -2,7 +2,7 @@ Character Story Generator with SeqGAN
 =====================================
 ## Team Members
 - [김경환(Kim Kyunghwan)](https://github.com/MrSyee)
-- 김동환(Kim Donghwan)
+- [김동환(Kim Donghwan)](https://github.com/hwan141592)
 - [김효진(Kim Hyojin)](https://github.com/Hy000jin)
 - [류원탁(Ryu Wontak)](https://github.com/rroundtable)
 - [박준섭(Park junsep)](https://github.com/557mp)
@@ -35,7 +35,7 @@ Character Story Generator with SeqGAN
     - 전체 데이터에서 속성별 키워드를 추출하여 SeqGAN의 스타팅 토큰으로 입력하여 속성별 이야기를 생성한다.
 6. docs
     - 최종 발표자료 모음.
-    
+
 ## Model Architecture
 ### SeqGAN  
 ![](./img/SeqGAN_00.png)
@@ -49,12 +49,12 @@ Character Story Generator with SeqGAN
 
 ## Prerequisites
 - python 3.6
-- tensorflow 1.7.0 
+- tensorflow 1.7.0
 - bs4 0.0.1  
-- gensim 3.5.0 
+- gensim 3.5.0
 - pandas 0.23.3
 - konlpy 0.4.4
-- scikit-learn 0.19.2 
+- scikit-learn 0.19.2
 - nltk 3.3
 
 ## References
